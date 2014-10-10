@@ -21,7 +21,7 @@ CREATE TABLE items (
     text    text,
     dead    boolean,
     parent  integer,
-    url     varchar(1000),
+    url     text,
     score   integer,
     title   varchar(200)
 );
