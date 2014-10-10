@@ -25,3 +25,18 @@ CREATE TABLE items (
     score   integer,
     title   varchar(400)
 );
+
+CREATE TABLE item_kid (
+    item_id integer NOT NULL,
+    kid_id  integer NOT NULL,
+    display_rank integer NOT NULL
+);
+
+-- SELECT COUNT(id),
+--        MAX(id)
+-- FROM items;
+-- 
+-- SELECT *
+-- FROM items
+-- WHERE type='story'
+-- ORDER BY score DESC;

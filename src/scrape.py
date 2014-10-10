@@ -6,7 +6,16 @@ import requests
 
 def postgres_escape(result, column):
     if column in ["type", "by", "url", "title", "text"]:
-        return QuotedString(result[column]).getquoted().decode("utf-8", errors="ignore")
+        try:
+            return QuotedString(result[column].encode("ascii", errors="ignore").decode("ascii", errors="ignore")).getquoted().decode("ascii", errors="ignore")
+        except:
+            f = open("error.csv", "w")
+            f.write(result[column])
+            f.close()
+            f = open("error2.csv", "w")
+            f.write(QuotedString(result[column]).getquoted())
+            f.close()
+            raise
     if column in ["time"]:
         return "to_timestamp(%s)" % result[column]
     return str(result[column])
@@ -20,7 +29,16 @@ def main():
     def log_item(result):
         keys   = [key for key in result if key not in ["kids", "parts"]]
         values = [postgres_escape(result, key) for key in keys]
-        cur.execute("INSERT INTO items (%s) VALUES (%s)" % (",".join(keys), ",".join(values)))
+        try:
+            cur.execute("INSERT INTO items (%s) VALUES (%s)" % (",".join(keys), ",".join(values)))
+        except:
+            f = open("sqlerror.csv", "w")
+            f.write("INSERT INTO items (%s) VALUES (%s)" % (",".join(keys), ",".join(values)))
+            f.close()
+            raise
+        if "kids" in result:
+            for i in range(0, len(result["kids"])):
+                cur.execute("INSERT INTO item_kid (item_id, kid_id, display_rank) VALUES (%d,%d,%d)" % (result["id"], result["kids"][i], i+1))
         con.commit()
 
     cur.execute("SELECT max(id) FROM items");
@@ -41,7 +59,7 @@ def main():
             for i in items[loc:loc+batch]:
                 endpoint = fbase._build_endpoint_url("/v0/item/%d" % i, "")
                 result = pool.apply_async(firebase.make_get_request, args=(endpoint, {}, {}), callback=log_item)
-            result.get()
+            result.get(0xFFFF) # specifying a timeout to get the keyboard interrupt
             print(items[loc+batch])
             loc += batch
         except requests.exceptions.HTTPError as exc:
@@ -51,7 +69,7 @@ def main():
         except KeyboardInterrupt:
             print("Caught KeyboardInterrupt, terminating workers")
             pool.terminate()
-            pool.join()
+            #pool.join()
 
     cur.close()
     con.close()
