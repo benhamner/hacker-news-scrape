@@ -3,6 +3,7 @@ from multiprocessing import Pool
 from psycopg2 import connect
 from psycopg2.extensions import QuotedString
 import requests
+import time
 
 def postgres_escape(result, column):
     if column in ["type", "by", "url", "title", "text"]:
@@ -47,9 +48,10 @@ def main():
     cur.execute("SELECT max(id) FROM items");
     res = cur.fetchall()
     max_id = res[0][0] if res[0][0] else 0
-    print("Maximum Id: %d" % max_id)
+    print("Maximum Id Scraped: %d" % max_id)
 
     max_id_possible = fbase.get("/v0/maxitem", None)
+    print("Maximum Id On Firebase: %d" % max_id_possible)
     pool = Pool(50)
 
     items = range(max_id+1, max_id_possible+1)
@@ -58,12 +60,13 @@ def main():
 
     while loc < len(items):
         try:
+            start = time.time()
             batch = min(10000, len(items)-loc)
             for i in items[loc:loc+batch]:
                 endpoint = fbase._build_endpoint_url("/v0/item/%d" % i, "")
                 result = pool.apply_async(firebase.make_get_request, args=(endpoint, {}, {}), callback=log_item)
             result.get(0xFFFF) # specifying a timeout to get the keyboard interrupt
-            print(items[loc+batch])
+            print("Item: %d, Elapsed Time: %0.2f, Items/Second: %0.2f" % (items[loc+batch], time.time()-start, batch/(time.time()-start)))
             loc += batch
         except requests.exceptions.HTTPError as exc:
             print(exc)
