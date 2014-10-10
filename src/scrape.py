@@ -39,6 +39,9 @@ def main():
         if "kids" in result:
             for i in range(0, len(result["kids"])):
                 cur.execute("INSERT INTO item_kid (item_id, kid_id, display_rank) VALUES (%d,%d,%d)" % (result["id"], result["kids"][i], i+1))
+        if "parts" in result:
+            for i in range(0, len(result["parts"])):
+                cur.execute("INSERT INTO item_part (item_id, part_id, display_rank) VALUES (%d,%d,%d)" % (result["id"], result["parts"][i], i+1))
         con.commit()
 
     cur.execute("SELECT max(id) FROM items");

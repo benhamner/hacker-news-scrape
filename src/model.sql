@@ -21,14 +21,20 @@ CREATE TABLE items (
     text    text,
     dead    boolean,
     parent  integer,
-    url     varchar(500),
+    url     varchar(1000),
     score   integer,
-    title   varchar(400)
+    title   varchar(200)
 );
 
 CREATE TABLE item_kid (
     item_id integer NOT NULL,
     kid_id  integer NOT NULL,
+    display_rank integer NOT NULL
+);
+
+CREATE TABLE item_part (
+    item_id integer NOT NULL,
+    part_id  integer NOT NULL,
     display_rank integer NOT NULL
 );
 
