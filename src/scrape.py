@@ -30,6 +30,9 @@ def main():
     cur = con.cursor()
 
     def log_item(result):
+        if result is None:
+            print("Response was empty ... continuing")
+            return
         keys   = [key for key in result if key not in ["kids", "parts"]]
         values = [postgres_escape(result, key) for key in keys]
         try:
@@ -54,16 +57,16 @@ def main():
 
     max_id_possible = fbase.get("/v0/maxitem", None)
     print("Maximum Id On Firebase: %d" % max_id_possible)
-    pool = Pool(50)
+    pool = Pool(5)
 
     items = range(max_id+1, max_id_possible+1)
 
     loc = 0
 
-    while loc < len(items):
+    while loc < len(items)-1:
         try:
             start = time.time()
-            batch = min(10000, len(items)-loc)
+            batch = min(10000, len(items)-loc-1)
             for i in items[loc:loc+batch]:
                 endpoint = fbase._build_endpoint_url("/v0/item/%d" % i, "")
                 result = pool.apply_async(firebase.make_get_request, args=(endpoint, {}, {}), callback=log_item)
@@ -77,8 +80,11 @@ def main():
         except KeyboardInterrupt:
             print("Caught KeyboardInterrupt, terminating workers")
             pool.terminate()
-            #pool.join()
+            pool.join()
 
+    pool.terminate()
+    pool.join()
+    
     cur.close()
     con.close()
 
