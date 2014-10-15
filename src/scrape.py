@@ -19,6 +19,8 @@ def postgres_escape(result, column):
             raise
     if column in ["time"]:
         return "to_timestamp(%s)" % result[column]
+    if column in ["deleted"] and result[column]=="yes":
+        return "TRUE"
     return str(result[column])
 
 def main():
